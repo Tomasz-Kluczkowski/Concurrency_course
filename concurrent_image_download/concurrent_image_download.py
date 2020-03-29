@@ -28,6 +28,10 @@ def main():
         threads.append(thread)
         # This starts each thread
         thread.start()
+        # Although it is tempting to put join() here as it looks like the loop below is redundant we must understand
+        # that the join() blocks until thread completes which means that each iteration of the loop would stop and wait
+        # for each thread to complete instead of starting them all at once - there would be no benefit to using
+        # threading with such an approach.
 
     for thread in threads:
         # calling join() on the thread blocks until it completes. Doing this in a loop makes sure that we stop execution
