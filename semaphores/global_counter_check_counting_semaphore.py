@@ -6,13 +6,15 @@ from datetime import datetime
 FUZZ = True
 
 counter = 0
-total_number_of_workers = 10
-number_of_concurrent_workers = 5
-batch_size = 10
+total_number_of_workers = 4
+number_of_concurrent_workers = 2
+batch_size = 5
 total_number_of_items = total_number_of_workers * batch_size
 
 semaphore = threading.Semaphore(number_of_concurrent_workers)
 counter_lock = threading.Lock()
+
+use_counter_lock = False
 
 
 def fuzz():
@@ -27,9 +29,10 @@ def increase_count_in_batch(batch_size: int):
     semaphore.acquire()
     print(f'Thread {threading.current_thread().getName()} acquired semaphore\n')
 
-    print(f'Thread {threading.current_thread().getName()} trying to acquire counter lock\n')
-    counter_lock.acquire()
-    print(f'Thread {threading.current_thread().getName()} acquired counter lock\n')
+    if use_counter_lock:
+        print(f'Thread {threading.current_thread().getName()} trying to acquire counter lock\n')
+        counter_lock.acquire()
+        print(f'Thread {threading.current_thread().getName()} acquired counter lock\n')
 
     for _ in range(batch_size):
         fuzz()
@@ -38,10 +41,10 @@ def increase_count_in_batch(batch_size: int):
         counter = old_counter + 1
         fuzz()
         print(f'The counter is: {counter}, increased by 1 by thread: {threading.current_thread().getName()}\n')
-        fuzz()
 
-    counter_lock.release()
-    print(f'Thread {threading.current_thread().getName()} released counter lock\n')
+    if use_counter_lock:
+        counter_lock.release()
+        print(f'Thread {threading.current_thread().getName()} released counter lock\n')
     semaphore.release()
     print(f'Thread {threading.current_thread().getName()} releasing semaphore\n')
 
