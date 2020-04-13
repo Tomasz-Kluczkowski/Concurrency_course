@@ -53,7 +53,7 @@ public class SingleThreadedEventPusher {
 """
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import DefaultDict, Set
+from typing import DefaultDict, List
 
 
 class EventKeys:
@@ -66,7 +66,7 @@ class Event:
     data: dict
 
 
-class Subscriber:
+class Observer:
     def __init__(self, name: str):
         self.name = name
         self.total = 0
@@ -80,34 +80,35 @@ class Subscriber:
 
 class Observable:
     def __init__(self):
-        self.key_map: DefaultDict[str, Set[Subscriber]] = defaultdict(set)
+        self.key_map: DefaultDict[str, List[Observer]] = defaultdict(list)
 
-    def add_subscriber(self, subscriber: Subscriber, key: str):
-        self.key_map[key].add(subscriber)
+    def add_observer(self, observer: Observer, key: str):
+        self.key_map[key].append(observer)
 
-    def remove_subscriber(self, subscriber: Subscriber, key: str):
-        self.key_map[key].discard(subscriber)
+    def remove_observer(self, observer: Observer, key: str):
+        if observer in self.key_map[key]:
+            self.key_map[key].remove(observer)
 
-    def notify_subscribers(self, event: Event, key: str):
-        for subscriber in self.key_map[key]:
-            subscriber.update(event=event, key=key)
-
-
-number_of_subscribers = 5
-
-subscribers = []
-for i in range(number_of_subscribers):
-    subscriber = Subscriber(name=f'Subscriber-{i}')
-    subscribers.append(subscriber)
+    def notify_observers(self, event: Event, key: str):
+        for observer in self.key_map[key]:
+            observer.update(event=event, key=key)
 
 
-observable = Observable()
+if __name__ == '__main__':
+    number_of_observers = 5
 
-for subscriber in subscribers:
-    observable.add_subscriber(subscriber=subscriber, key=EventKeys.EXPENSES)
+    observers = []
+    for i in range(number_of_observers):
+        observer = Observer(name=f'Observer-{i}')
+        observers.append(observer)
 
-number_of_events = 5
-events = [Event(name='Adding Expenses', data={EventKeys.EXPENSES: 1}) for i in range(number_of_events)]
+    observable = Observable()
 
-for event in events:
-    observable.notify_subscribers(event=event, key=EventKeys.EXPENSES)
+    for observer in observers:
+        observable.add_observer(observer=observer, key=EventKeys.EXPENSES)
+
+    number_of_events = 5
+    events = [Event(name='Adding Expenses', data={EventKeys.EXPENSES: 1}) for i in range(number_of_events)]
+
+    for event in events:
+        observable.notify_observers(event=event, key=EventKeys.EXPENSES)
