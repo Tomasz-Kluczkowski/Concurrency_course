@@ -56,7 +56,8 @@ from collections import defaultdict
 from dataclasses import dataclass
 from threading import Lock
 from time import sleep
-from typing import DefaultDict, Set, List
+from typing import DefaultDict, List
+import threading
 
 
 def add_delay(toggle: bool = False):
@@ -80,10 +81,11 @@ class Observer:
         self.total = 0
 
     def update(self, event: Event, key: str):
-        print(f'{self.name} received event "{event.name}" for key: {key}')
-        print(f'Event data: {event.data}')
+        print(f'{self.name} received event "{event.name}" for key: {key}\n')
+        print(f'Event data: {event.data}\n')
         self.total += event.data.get(key, 0)
-        print(f'Total expenses: {self.total}')
+        print(f'Total expenses: {self.total}\n')
+        add_delay(True)
 
 
 class Observable:
@@ -108,7 +110,9 @@ class Observable:
     def add_observer(self, observer: Observer, key: str):
         add_delay(toggle=self.delay_toggle)
         with self.key_map_lock:
+            print(f'Acquired lock in: {threading.current_thread().getName()}\n')
             self.key_map[key].append(observer)
+            print(f'Added observer: {observer.name}\n')
         add_delay(toggle=self.delay_toggle)
 
     def remove_observer(self, observer: Observer, key: str):
@@ -116,12 +120,20 @@ class Observable:
         with self.key_map_lock:
             if observer in self.key_map[key]:
                 self.key_map[key].remove(observer)
+                print(f'Removed observer: {observer.name}\n')
         add_delay(toggle=self.delay_toggle)
 
     def notify_observers(self, event: Event, key: str):
         with self.key_map_lock:
-            for observer in self.key_map[key]:
-                observer.update(event=event, key=key)
+            print(f'Acquired lock in: {threading.current_thread().getName()}\n')
+            observers_for_key = self.key_map[key]
+            if not observers_for_key:
+                return
+
+            copy_of_observers_for_key = list(observers_for_key)
+
+        for observer in copy_of_observers_for_key:
+            observer.update(event=event, key=key)
 
 
 if __name__ == '__main__':
